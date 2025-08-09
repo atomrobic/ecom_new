@@ -1,0 +1,44 @@
+# Python
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+*.sqlite3
+db.sqlite3
+
+# Django media/static
+/media/
+/staticfiles/
+
+# If using S3, ignore credentials
+*.env
+.env
+*.secret
+.jpg
+.png
+
+# macOS junk
+.DS_Store
+
+# Virtual environment
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# Flutter / Dart
+.dart_tool/
+.packages
+pubspec.lock
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Generated files
+*.log
+
+# Ignore local test images
+posts/
+profile_pictures/
