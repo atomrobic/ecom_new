@@ -27,7 +27,6 @@ def get_user_by_email(db: Session, email: str):
 
 
 # UPLOAD_DIR = "uploaded_images"
-# os.makedirs(UPLOAD_DIR, exist_ok=True)
 def product_to_schema(db_product: models.Product) -> schemas.Product:
     return schemas.Product(
         id=db_product.id,
