@@ -38,6 +38,7 @@ async def send_otp(email: str, db: Session = Depends(get_db)):
     except Exception as e:
         print("Failed to send email:", e)
         raise HTTPException(status_code=500, detail="Failed to send email")
+    print(send_mail)
 
     return {"message": "OTP sent"}
 

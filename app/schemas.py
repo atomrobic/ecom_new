@@ -38,8 +38,9 @@ class ProductBase(BaseModel):
     name: str
     description: str
     price: float
-    image: List[str]
+    image: List[str]  # Pydantic expects a list of strings here
     phone_number: str
+    seller_id: int  # seller reference
 
 class ProductCreate(ProductBase):
     pass
@@ -74,3 +75,7 @@ class OTPVerifySchema(BaseModel):
     otp: str
     
     
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str

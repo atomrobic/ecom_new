@@ -1,9 +1,10 @@
 from datetime import time
 import json
 import os
+import jwt
 from sqlalchemy.orm import Session
 from app.models import User  # SQLAlchemy model
-from app.schemas import UserCreate  # Pydantic schema for input
+from app.schemas import Product, UserCreate  # Pydantic schema for input
 from app.database import SessionLocal
 from . import models, schemas
 import random
@@ -25,41 +26,62 @@ def get_user_by_email(db: Session, email: str):
 
 
 
-UPLOAD_DIR = "uploaded_images"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+# UPLOAD_DIR = "uploaded_images"
+# os.makedirs(UPLOAD_DIR, exist_ok=True)
 def product_to_schema(db_product: models.Product) -> schemas.Product:
     return schemas.Product(
         id=db_product.id,
         name=db_product.name,
         description=db_product.description,
         price=db_product.price,
-        image=json.loads(db_product.image),  # parse JSON string back to list
+        image=json.loads(db_product.image),
         phone_number=db_product.phone_number,
-        # add other fields if needed
+        seller_id=db_product.seller_id  # ✅ Add this
     )
 
+def update_product(db: Session, product_id: int, update_data: dict):
+    db_product = db.query(models.Product).filter(models.Product.id == product_id).first()
+    if not db_product:
+        return None  # Product not found
+    
+    for key, value in update_data.items():
+        if hasattr(db_product, key):
+            setattr(db_product, key, value)
+    
+    db.commit()
+    db.refresh(db_product)
+    return db_product
+
+print (Product)
 def create_product(db: Session, product: schemas.ProductCreate):
     db_product = models.Product(
         name=product.name,
         description=product.description,
         price=product.price,
-        image=json.dumps(product.image),  # serialize list as JSON string
+        image=json.dumps(product.image) if product.image else "[]",  # ✅ store as string
         phone_number=product.phone_number,
+        seller_id=product.seller_id
     )
     db.add(db_product)
     db.commit()
-    db.refresh(db_product)  # refresh to get the new id and all fields
+    db.refresh(db_product)
     return db_product
 
+def get_products_by_seller(db: Session, seller_id: int):
+    return db.query(models.Product).filter(models.Product.seller_id == seller_id).all()
 
-def get_product_by_id(db: Session, product_id: int):
-    db_product = db.query(models.Product).filter(models.Product.id == product_id).first()
-    if not db_product:
-        return None
-    return product_to_schema(db_product)
+import json
 
-def get_products(db: Session):
-    return db.query(models.Product).all()
+product_to_schema = lambda p: schemas.Product(
+    id=p.id,
+    name=p.name,
+    description=p.description,
+    price=p.price,
+    image=json.loads(p.image) if isinstance(p.image, str) else (p.image if isinstance(p.image, list) else []),
+    phone_number=p.phone_number,
+    seller_id=p.seller_id
+)
+
 
 # Orders
 def create_order(db: Session, order: schemas.OrderCreate):
