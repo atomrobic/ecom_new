@@ -52,7 +52,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from psycopg2 import OperationalError
 from app.routers import auth, order, seller
 from app import models, database
-from app.database import engine
+from app.database import DATABASE_URL, engine
 import logging
 from .supabase_client import supabase
 
@@ -63,14 +63,9 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-# Directory for uploaded files
-UPLOAD_DIR = "uploaded"
+UPLOAD_DIR = "/mnt/uploads"  # persistent disk mount
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-# Serve static files at /uploads
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
-
-
 
 
 # CORS
@@ -81,7 +76,7 @@ app.add_middleware(
     allow_headers=["*"],
     allow_origins=["*"],  # Replace with frontend URL in production
 )
-from sqlalchemy import text
+from sqlalchemy import create_engine, text
 
 try:
     with engine.connect() as conn:
@@ -98,22 +93,3 @@ app.include_router(seller.router, prefix="/seller", tags=["seller"])
 @app.get("/")
 def home():
     return {"message": "FastAPI + SQLite + Alembic"}
-
-# Endpoint to upload a product image
-@app.post("/seller/upload-product-image")
-async def upload_product_image(file: UploadFile = File(...)):
-    # Generate a unique filename
-    file_ext = os.path.splitext(file.filename)[1]
-    unique_name = f"{uuid4()}{file_ext}"
-    file_path = os.path.join(UPLOAD_DIR, unique_name)
-
-    try:
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
-    finally:
-        file.file.close()
-
-    # Return the URL to store in the DB
-    return {"url": f"/uploads/{unique_name}"}

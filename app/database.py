@@ -12,8 +12,14 @@ if not DATABASE_URL:
 
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"sslmode": "require"}  # Pooler still needs SSL
+    connect_args={"sslmode": "require"},  # ensure SSL
+
+    pool_pre_ping=True,  # checks if connection is alive before using
+    pool_size=10,
+    max_overflow=20,
+    pool_timeout=30
 )
+
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
