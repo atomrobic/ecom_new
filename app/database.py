@@ -12,13 +12,14 @@ if not DATABASE_URL:
 
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"sslmode": "require"},  # ensure SSL
-
-    pool_pre_ping=True,  # checks if connection is alive before using
-    pool_size=10,
-    max_overflow=20,
-    pool_timeout=30
+    connect_args={"sslmode": "require"},
+    pool_pre_ping=True,
+    pool_size=2,        # max persistent connections
+    max_overflow=1,     # temporary connections
+    pool_timeout=30,
+    pool_recycle=1800
 )
+
 
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
