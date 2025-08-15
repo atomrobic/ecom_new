@@ -162,6 +162,19 @@ def manage_product(
         if len(images) > 5:
             raise HTTPException(status_code=400, detail="You can upload up to 5 images")
 
+        # image_urls = []
+        # for image in images:
+        #     if not allowed_file(image.filename):
+        #         raise HTTPException(status_code=400, detail=f"Unsupported file type: {image.filename}")
+
+        #     ext = image.filename.rsplit(".", 1)[1].lower()
+        #     filename = f"{uuid.uuid4()}.{ext}"
+        #     image_path = os.path.join(UPLOAD_DIR, filename)
+        #     image_url = f"/uploads/{filename}"
+
+        #     with open(image_path, "wb") as buffer:
+        #         shutil.copyfileobj(image.file, buffer)
+        #     image_urls.append(image_url)
         image_urls = []
         for image in images:
             if not allowed_file(image.filename):
@@ -174,8 +187,8 @@ def manage_product(
 
             with open(image_path, "wb") as buffer:
                 shutil.copyfileobj(image.file, buffer)
-            image_urls.append(image_url)
 
+            image_urls.append(image_url)
         product_data = schemas.ProductCreate(
             name=name,
             description=description,
