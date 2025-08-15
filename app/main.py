@@ -65,7 +65,7 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
 
-app.mount("/uploaded", StaticFiles(directory=UPLOAD_DIR), name="uploaded")
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploaded")
 
 # CORS
 app.add_middleware(
