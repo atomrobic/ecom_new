@@ -20,7 +20,7 @@ from passlib.context import CryptContext
 from app import crud, models, schemas, database
 from app import auths
 from app.config import ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS
-from app.main import UPLOAD_DIR
+from app.config import UPLOAD_DIR
 
 # ---------------------- CONFIG ----------------------
 router = APIRouter()

@@ -55,6 +55,7 @@ from app import models, database
 from app.database import engine
 import logging
 from .supabase_client import supabase
+from app.config import UPLOAD_DIR
 
 logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
 
@@ -64,8 +65,6 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
 
-UPLOAD_DIR = "uploaded"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
 app.mount("/uploaded", StaticFiles(directory=UPLOAD_DIR), name="uploaded")
 
 # CORS
