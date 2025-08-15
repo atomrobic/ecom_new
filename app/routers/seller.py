@@ -19,6 +19,7 @@ from passlib.context import CryptContext
 
 from app import crud, models, schemas, database
 from app import auths
+from app.config import ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS
 
 # ---------------------- CONFIG ----------------------
 router = APIRouter()
@@ -27,7 +28,6 @@ UPLOAD_DIR = "uploaded"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 600
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -92,33 +92,34 @@ def seller_login(data: schemas.SellerLogin, db: Session = Depends(get_db)):
             detail="Invalid email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-
-    # 🕒 Set token expiration
+ # 🕒 Access token expiration
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(data={"sub": seller.email}, expires_delta=access_token_expires)
+    access_token = auths.create_access_token(
+        data={"sub": seller.email},
+        expires_delta=access_token_expires
+    )
 
-    # 🔁 Generate secure refresh token
+    # 🔁 Generate refresh token
     refresh_token = secrets.token_urlsafe(32)
     hashed_refresh_token = auths.hash_token(refresh_token)
 
-    # 💾 Save hashed refresh token to DB with expiry
     try:
         seller.refresh_token = hashed_refresh_token
-        seller.refresh_token_expires_at = datetime.utcnow() + timedelta(days=7)
+        seller.refresh_token_expires_at = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
         db.commit()
-        db.refresh(seller)  # Optional: ensure updated values
-    except Exception as e:
+        db.refresh(seller)
+    except Exception:
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to save session. Please try again."
         )
 
-    # ✅ Return tokens and minimal seller info
+    # ✅ Return tokens and seller info
     return {
         "access_token": access_token,
         "token_type": "bearer",
-        "refresh_token": refresh_token,  # Only sent once
+        "refresh_token": refresh_token,  # send once
         "seller": {
             "id": seller.id,
             "name": seller.name,

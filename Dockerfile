@@ -1,5 +1,5 @@
 # Use official Python image
-FROM python-3.11.9
+FROM python:3.11.9
 
 
 # Set environment variables
