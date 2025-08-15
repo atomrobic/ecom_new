@@ -27,7 +27,7 @@ UPLOAD_DIR = "uploaded"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 600
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
