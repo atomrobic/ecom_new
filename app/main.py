@@ -57,7 +57,6 @@ from app.database import engine
 import logging
 from .supabase_client import supabase
 
-# Suppress verbose SQLAlchemy logs
 logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
 
 # Create DB tables
