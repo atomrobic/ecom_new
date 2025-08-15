@@ -52,7 +52,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from psycopg2 import OperationalError
 from app.routers import auth, order, seller
 from app import models, database
-from app.database import DATABASE_URL, engine
+from app.database import engine
 import logging
 from .supabase_client import supabase
 
@@ -63,10 +63,10 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-UPLOAD_DIR = "/mnt/uploads"  # persistent disk mount
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
+UPLOAD_DIR = "uploaded"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+app.mount("/uploaded", StaticFiles(directory=UPLOAD_DIR), name="uploaded")
 
 # CORS
 app.add_middleware(
@@ -76,7 +76,7 @@ app.add_middleware(
     allow_headers=["*"],
     allow_origins=["*"],  # Replace with frontend URL in production
 )
-from sqlalchemy import create_engine, text
+from sqlalchemy import text
 
 try:
     with engine.connect() as conn:

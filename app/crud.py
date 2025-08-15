@@ -107,8 +107,8 @@ def verify_otp(email: str, entered_otp: str) -> bool:
         return data["otp"] == entered_otp
     return False
 
-UPLOAD_DIR = "uploaded_images"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+# UPLOAD_DIR = "uploaded_images"
+# os.makedirs(UPLOAD_DIR, exist_ok=True)
 def get_db():
     db = SessionLocal()
     try:
