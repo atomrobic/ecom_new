@@ -10,5 +10,5 @@ JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "supersecret")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 # app/config.py
 
-UPLOAD_DIR = "uploaded"
+UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "..", "uploaded")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
