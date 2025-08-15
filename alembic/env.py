@@ -1,39 +1,31 @@
 from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
-from app import models  # import models module with Base
+from app.database import Base
+import os
 
 config = context.config
 fileConfig(config.config_file_name)
 
-target_metadata = models.Base.metadata  # <<<<<< your models metadata here
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:Akhil@localhost:5432/ecom")
+config.set_main_option("sqlalchemy.url", DATABASE_URL)
+
+target_metadata = Base.metadata
 
 def run_migrations_offline():
     url = config.get_main_option("sqlalchemy.url")
-    context.configure(
-        url=url,
-        target_metadata=target_metadata,
-        literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
-    )
-
+    context.configure(url=url, target_metadata=target_metadata, literal_binds=True)
     with context.begin_transaction():
         context.run_migrations()
 
 def run_migrations_online():
     connectable = engine_from_config(
         config.get_section(config.config_ini_section),
-        prefix='sqlalchemy.',
+        prefix="sqlalchemy.",
         poolclass=pool.NullPool,
-        connect_args={"check_same_thread": False}  # For SQLite
     )
-
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection,
-            target_metadata=target_metadata,
-        )
-
+        context.configure(connection=connection, target_metadata=target_metadata)
         with context.begin_transaction():
             context.run_migrations()
 
