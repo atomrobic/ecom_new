@@ -50,7 +50,6 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from psycopg2 import OperationalError
-import psycopg2
 from app.routers import auth, order, seller
 from app import models, database
 from app.database import engine
@@ -72,7 +71,6 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 
-import psycopg2
 
 
 # CORS
