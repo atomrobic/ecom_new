@@ -9,6 +9,7 @@ import time
 from typing import List, Optional
 import uuid
 
+import cloudinary
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Header, UploadFile, status
 from fastapi.params import Query
 from fastapi.security import OAuth2PasswordBearer
@@ -175,18 +176,22 @@ def manage_product(
         #     with open(image_path, "wb") as buffer:
         #         shutil.copyfileobj(image.file, buffer)
         #     image_urls.append(image_url)
+        import uuid
+
         image_urls = []
+
         for image in images:
             if not allowed_file(image.filename):
                 raise HTTPException(status_code=400, detail=f"Unsupported file type: {image.filename}")
 
-            ext = image.filename.rsplit(".", 1)[1].lower()
-            filename = f"{uuid.uuid4()}.{ext}"
-            image_path = os.path.join(UPLOAD_DIR, filename)
-            image_url = f"/uploads/{filename}"
+            try:
+                # Upload to Cloudinary instead of local disk
+                result = cloudinary.uploader.upload(image.file)
+                image_url = result.get("secure_url")  # Cloudinary public URL
+                image_urls.append(image_url)
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Image upload failed: {e}")
 
-            with open(image_path, "wb") as buffer:
-                shutil.copyfileobj(image.file, buffer)
 
             image_urls.append(image_url)
         product_data = schemas.ProductCreate(
