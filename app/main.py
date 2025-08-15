@@ -66,6 +66,11 @@ app = FastAPI()
 
 
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="upload")
+origins = [
+    "http://localhost:3000",  # your frontend URL
+    "https://rect-eshop.vercel.app/",
+    "*"  # optional, allow all origins (not recommended for production)
+]
 
 # CORS
 app.add_middleware(
