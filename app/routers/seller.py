@@ -22,6 +22,7 @@ from app import crud, models, schemas, database
 from app import auths
 from app.config import ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS
 from app.config import UPLOAD_DIR
+from app.cloudinary_config import cloudinary
 
 # ---------------------- CONFIG ----------------------
 router = APIRouter()
@@ -135,6 +136,11 @@ def allowed_file(filename: str):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+# Configure Cloudinary
+
+
+UPLOAD_LIMIT = 5
+
 @router.post("/products")
 def manage_product(
     action: str = Form(...),  # 'add', 'update', 'delete'
@@ -159,41 +165,20 @@ def manage_product(
 
         if len(images) == 0:
             raise HTTPException(status_code=400, detail="At least one image is required")
-
-        if len(images) > 5:
-            raise HTTPException(status_code=400, detail="You can upload up to 5 images")
-
-        # image_urls = []
-        # for image in images:
-        #     if not allowed_file(image.filename):
-        #         raise HTTPException(status_code=400, detail=f"Unsupported file type: {image.filename}")
-
-        #     ext = image.filename.rsplit(".", 1)[1].lower()
-        #     filename = f"{uuid.uuid4()}.{ext}"
-        #     image_path = os.path.join(UPLOAD_DIR, filename)
-        #     image_url = f"/uploads/{filename}"
-
-        #     with open(image_path, "wb") as buffer:
-        #         shutil.copyfileobj(image.file, buffer)
-        #     image_urls.append(image_url)
-        import uuid
+        if len(images) > UPLOAD_LIMIT:
+            raise HTTPException(status_code=400, detail=f"You can upload up to {UPLOAD_LIMIT} images")
 
         image_urls = []
-
         for image in images:
             if not allowed_file(image.filename):
                 raise HTTPException(status_code=400, detail=f"Unsupported file type: {image.filename}")
-
             try:
-                # Upload to Cloudinary instead of local disk
                 result = cloudinary.uploader.upload(image.file)
-                image_url = result.get("secure_url")  # Cloudinary public URL
+                image_url = result.get("secure_url")
                 image_urls.append(image_url)
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"Image upload failed: {e}")
 
-
-            image_urls.append(image_url)
         product_data = schemas.ProductCreate(
             name=name,
             description=description,
@@ -210,16 +195,12 @@ def manage_product(
         if not product_id:
             raise HTTPException(status_code=400, detail="product_id is required for update")
 
-        # Step 1: Find the product
         db_product = db.query(models.Product).filter(models.Product.id == product_id).first()
         if not db_product:
             raise HTTPException(status_code=404, detail="Product not found")
-
-        # Step 2: Check ownership
         if db_product.seller_id != seller_id:
             raise HTTPException(status_code=403, detail="You do not own this product")
 
-        # Step 3: Prepare updates
         update_data = {}
         if name:
             update_data["name"] = name
@@ -231,22 +212,18 @@ def manage_product(
             update_data["phone_number"] = phone_number
 
         if images:
-            if len(images) > 5:
-                raise HTTPException(status_code=400, detail="You can upload up to 5 images")
-
+            if len(images) > UPLOAD_LIMIT:
+                raise HTTPException(status_code=400, detail=f"You can upload up to {UPLOAD_LIMIT} images")
             image_urls = []
             for image in images:
                 if not allowed_file(image.filename):
                     raise HTTPException(status_code=400, detail=f"Unsupported file type: {image.filename}")
-
-                ext = image.filename.rsplit(".", 1)[1].lower()
-                filename = f"{uuid.uuid4()}.{ext}"
-                image_path = os.path.join(UPLOAD_DIR, filename)
-                image_url = f"/uploads/{filename}"
-
-                with open(image_path, "wb") as buffer:
-                    shutil.copyfileobj(image.file, buffer)
-                image_urls.append(image_url)
+                try:
+                    result = cloudinary.uploader.upload(image.file)
+                    image_url = result.get("secure_url")
+                    image_urls.append(image_url)
+                except Exception as e:
+                    raise HTTPException(status_code=500, detail=f"Image upload failed: {e}")
             update_data["image"] = image_urls
 
         db_product = crud.update_product(db, product_id, update_data)
@@ -260,7 +237,6 @@ def manage_product(
         db_product = db.query(models.Product).filter(models.Product.id == product_id).first()
         if not db_product:
             raise HTTPException(status_code=404, detail="Product not found")
-
         if db_product.seller_id != seller_id:
             raise HTTPException(status_code=403, detail="You do not own this product")
 
@@ -268,9 +244,145 @@ def manage_product(
         db.commit()
         return {"detail": "Product deleted successfully"}
 
-    # ------------------- INVALID ACTION -------------------
     else:
-        raise HTTPException(status_code=400, detail="Invalid action. Use 'add', 'update', or 'delete'")
+        raise HTTPException(status_code=400, detail="Invalid action. Must be 'add', 'update', or 'delete'.")
+# @router.post("/products")
+# def manage_product(
+#     action: str = Form(...),  # 'add', 'update', 'delete'
+#     product_id: Optional[int] = Form(None),
+#     name: Optional[str] = Form(None),
+#     description: Optional[str] = Form(None),
+#     price: Optional[float] = Form(None),
+#     phone_number: Optional[str] = Form(None),
+#     images: Optional[List[UploadFile]] = File(None),
+#     db: Session = Depends(get_db),
+#     current_seller: models.Seller = Depends(auths.get_current_seller)
+# ):
+#     seller_id = current_seller.id
+
+#     # ------------------- ADD -------------------
+#     if action == "add":
+#         if not name or not description or price is None or not phone_number or not images:
+#             raise HTTPException(
+#                 status_code=400,
+#                 detail="Missing required fields for adding product"
+#             )
+
+#         if len(images) == 0:
+#             raise HTTPException(status_code=400, detail="At least one image is required")
+
+#         if len(images) > 5:
+#             raise HTTPException(status_code=400, detail="You can upload up to 5 images")
+
+#         # image_urls = []
+#         # for image in images:
+#         #     if not allowed_file(image.filename):
+#         #         raise HTTPException(status_code=400, detail=f"Unsupported file type: {image.filename}")
+
+#         #     ext = image.filename.rsplit(".", 1)[1].lower()
+#         #     filename = f"{uuid.uuid4()}.{ext}"
+#         #     image_path = os.path.join(UPLOAD_DIR, filename)
+#         #     image_url = f"/uploads/{filename}"
+
+#         #     with open(image_path, "wb") as buffer:
+#         #         shutil.copyfileobj(image.file, buffer)
+#         #     image_urls.append(image_url)
+#         import uuid
+
+#         image_urls = []
+
+#         for image in images:
+#             if not allowed_file(image.filename):
+#                 raise HTTPException(status_code=400, detail=f"Unsupported file type: {image.filename}")
+
+#             try:
+#                 # Upload to Cloudinary instead of local disk
+#                 result = cloudinary.uploader.upload("path/to/image.jpg")
+#                 # result = cloudinary.uploader.upload(image.file)
+#                 image_url = result.get("secure_url")  # Cloudinary public URL
+#                 image_urls.append(image_url)
+#             except Exception as e:
+#                 raise HTTPException(status_code=500, detail=f"Image upload failed: {e}")
+
+
+#             image_urls.append(image_url)
+#         product_data = schemas.ProductCreate(
+#             name=name,
+#             description=description,
+#             price=price,
+#             image=image_urls,
+#             phone_number=phone_number,
+#             seller_id=seller_id
+#         )
+#         db_product = crud.create_product(db, product_data)
+#         return crud.product_to_schema(db_product)
+
+#     # ------------------- UPDATE -------------------
+#     elif action == "update":
+#         if not product_id:
+#             raise HTTPException(status_code=400, detail="product_id is required for update")
+
+#         # Step 1: Find the product
+#         db_product = db.query(models.Product).filter(models.Product.id == product_id).first()
+#         if not db_product:
+#             raise HTTPException(status_code=404, detail="Product not found")
+
+#         # Step 2: Check ownership
+#         if db_product.seller_id != seller_id:
+#             raise HTTPException(status_code=403, detail="You do not own this product")
+
+#         # Step 3: Prepare updates
+#         update_data = {}
+#         if name:
+#             update_data["name"] = name
+#         if description:
+#             update_data["description"] = description
+#         if price is not None:
+#             update_data["price"] = price
+#         if phone_number:
+#             update_data["phone_number"] = phone_number
+
+#         if images:
+#             if len(images) > 5:
+#                 raise HTTPException(status_code=400, detail="You can upload up to 5 images")
+
+#             image_urls = []
+#             for image in images:
+#                 if not allowed_file(image.filename):
+#                     raise HTTPException(status_code=400, detail=f"Unsupported file type: {image.filename}")
+
+#                 ext = image.filename.rsplit(".", 1)[1].lower()
+#                 filename = f"{uuid.uuid4()}.{ext}"
+#                 image_path = os.path.join(UPLOAD_DIR, filename)
+#                 image_url = f"/uploads/{filename}"
+
+#                 with open(image_path, "wb") as buffer:
+#                     shutil.copyfileobj(image.file, buffer)
+#                 image_urls.append(image_url)
+#             update_data["image"] = image_urls
+
+#         db_product = crud.update_product(db, product_id, update_data)
+#         return crud.product_to_schema(db_product)
+
+#     # ------------------- DELETE -------------------
+#     elif action == "delete":
+#         if not product_id:
+#             raise HTTPException(status_code=400, detail="product_id is required for delete")
+
+#         db_product = db.query(models.Product).filter(models.Product.id == product_id).first()
+#         if not db_product:
+#             raise HTTPException(status_code=404, detail="Product not found")
+
+#         if db_product.seller_id != seller_id:
+#             raise HTTPException(status_code=403, detail="You do not own this product")
+
+#         db.delete(db_product)
+#         db.commit()
+#         return {"detail": "Product deleted successfully"}
+
+#     # ------------------- INVALID ACTION -------------------
+#     else:
+#         raise HTTPException(status_code=400, detail="Invalid action. Use 'add', 'update', or 'delete'")
 @router.delete("/products/{product_id}")
 
 @router.get("/products/by-seller/{seller_id}")

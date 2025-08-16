@@ -1,10 +1,15 @@
+#cloudinary_config.py
+
+
+import os
 import cloudinary
 import cloudinary.uploader
 
 # Replace these with your actual Cloudinary account info
+
 cloudinary.config(
-    cloud_name='your_cloud_name',
-    api_key='your_api_key',
-    api_secret='your_api_secret',
-    secure=True  # ensures HTTPS URLs
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET"),
+    secure=True
 )
