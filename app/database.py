@@ -16,7 +16,7 @@ engine = create_engine(
     connect_args={"sslmode": "require"},  # required for Supabase
     pool_pre_ping=True,
     pool_size=2,        # low for free-tier
-    max_overflow=1,     # extra temporary connections
+    max_overflow=0,     # extra temporary connections
     pool_timeout=30,
     pool_recycle=1800
 )

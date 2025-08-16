@@ -9,7 +9,6 @@ from sqlalchemy.orm import Session
 
 from app.crud import generate_otp, get_db, verify_otp
 from app.models import Otp, User
-from app.service import send_mail
 from app import crud, schemas, database
 router = APIRouter()
 # Order Routes

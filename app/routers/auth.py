@@ -10,7 +10,7 @@ from app.database import get_db
 
 from app.crud import generate_otp, verify_otp
 from app.models import Otp, User
-from app.service import send_mail
+from app.service import send_otp_mail
 from app import crud, schemas, database
 router = APIRouter()
 @router.post("/send-otp")
@@ -29,20 +29,14 @@ async def send_otp(email: str, db: Session = Depends(get_db)):
     db.add(new_otp)
     db.commit()
 
-    try:
-        send_mail(
-            to=email,
-            subject="Your OTP Code",
-            html=f"<p>Your OTP is: <b>{otp_code}</b></p>",
-        )
-    except Exception as e:
-        print("Failed to send email:", e)
-        raise HTTPException(status_code=500, detail="Failed to send email")
-    print(send_mail)
+    # Send OTP via Mailchimp (Mandrill recommended)
+    subject = "Your OTP Code"
+    html_content = f"<p>Your OTP is: <b>{otp_code}</b></p>"
 
-    return {"message": "OTP sent"}
+    if not send_otp_mail(email, subject, html_content):
+        raise HTTPException(status_code=500, detail="Failed to send email via Mailchimp")
 
-
+    return {"message": "OTP sent successfully"}
 @router.post("/verify-otp")
 async def verify_otp_route(email: str, otp: str, db: Session = Depends(get_db)):
     otp_entry = db.query(Otp).filter(Otp.email == email, Otp.code == otp).first()
