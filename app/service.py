@@ -9,7 +9,7 @@ resend.api_key = os.getenv("RESEND_API_KEY")
 def send_mail(to: str, subject: str, html: str):
     try:
         response = resend.Emails.send({
-            "from": "your_verified_email@example.com",
+            "from": "akhilappuyeroor@gmail.com",
             "to": to,
             "subject": subject,
             "html": html
