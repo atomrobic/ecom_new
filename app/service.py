@@ -1,30 +1,71 @@
+# import os
+# import mandrill
+# from dotenv import load_dotenv
+
+# load_dotenv()
+
+# MANDRILL_API_KEY = os.getenv("MANDRILL_API_KEY")
+
+# def send_otp_mail(to_email: str, subject: str, html: str):
+#     try:
+#         mandrill_client = mandrill.Mandrill(MANDRILL_API_KEY)
+#         message = {
+#             'from_email': 'madangle356@gmail.com',
+#             'subject': subject,
+#             'html': html,
+#             'to': [{'email': to_email, 'type': 'to'}],
+#         }
+#         result = mandrill_client.messages.send(message=message)
+#         print("Mail Sent:", result)
+#         return True
+#     except mandrill.Error as e:
+#         print("Mandrill Error:", e)
+#         return False
+# import random
+
+import random
+import smtplib
+from email.mime.text import MIMEText
 import os
-import mailchimp_marketing as MailchimpMarketing
-from mailchimp_marketing.api_client import ApiClientError
 from dotenv import load_dotenv
 
+# Load environment variables from .env
 load_dotenv()
 
-API_KEY = os.getenv("MAILCHIMP_API_KEY")
-SERVER_PREFIX = os.getenv("MAILCHIMP_SERVER")
-SENDER_EMAIL = os.getenv("MAILCHIMP_SENDER_EMAIL")
+SMTP_SERVER = os.getenv("SMTP_SERVER")
+SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
+SMTP_USER = os.getenv("SMTP_USER")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 
-client = MailchimpMarketing.Client()
-client.set_config({
-    "api_key": API_KEY,
-    "server": SERVER_PREFIX
-})
 
-def send_otp_mail(to_email: str, subject: str, html: str):
+import smtplib
+from email.mime.text import MIMEText
+
+def send_email(to_email: str, subject: str, body: str):
+    """Send an email using Gmail SMTP"""
+    msg = MIMEText(body, "html")
+    msg["Subject"] = subject
+    msg["From"] = SMTP_USER
+    msg["To"] = to_email
+
     try:
-        # Mailchimp doesn't have a direct send-email API for transactional emails.
-        # But if you use Mandrill (Mailchimp transactional) or campaigns, you can send email.
-        # Here we simulate sending via adding a new campaign and sending a test email
-        response = client.ping.get()  # simple ping to verify
-        print("Mailchimp API Ping:", response)
-        # For production, integrate Mandrill for sending transactional OTP emails
-        print(f"Simulating sending email to {to_email}: {subject} / {html}")
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.starttls()
+        server.login(SMTP_USER, SMTP_PASSWORD)
+        server.sendmail(SMTP_USER, [to_email], msg.as_string())
+        server.quit()
+        print("✅ Email sent successfully")
         return True
-    except ApiClientError as e:
-        print("Mailchimp API Error:", e.text)
+    except Exception as e:
+        print("❌ Error:", e)
         return False
+
+
+def generate_otp(to_email: str):
+    """Generate OTP and send via email"""
+    otp = str(random.randint(100000, 999999))  # 6-digit OTP
+    subject = "Your OTP Code"
+    html = f"<h2>Your OTP is: {otp}</h2><p>It will expire in 10 minutes.</p>"
+
+    success = send_email(to_email=to_email, subject=subject, body=html)
+    return otp if success else None
