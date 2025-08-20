@@ -7,7 +7,7 @@ from sqlalchemy import text
 
 from app import models
 from app.database import engine, Base, get_db
-from app.routers import auth, order, seller
+from app.routers import auth, banner, order, seller
 from app.config import UPLOAD_DIR
 
 # Suppress verbose SQL logs
@@ -20,15 +20,20 @@ app = FastAPI()
 
 # Serve static uploads
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+origins = [
+    "http://localhost",
+    "http://localhost:3000",
+    # Add other trusted frontend URLs here (e.g., "https://your-production-frontend.com")
+]
 
-# CORS
 app.add_middleware(
     CORSMiddleware,
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    allow_origins=["*"],  # replace with frontend URL in production
 )
+
 
 # ✅ Test DB connection once at startup
 try:
@@ -42,6 +47,8 @@ except Exception as e:
 app.include_router(auth.router)
 app.include_router(order.router)
 app.include_router(seller.router, prefix="/seller", tags=["seller"])
+app.include_router(banner.router)
+
 
 # Root endpoint
 @app.get("/")

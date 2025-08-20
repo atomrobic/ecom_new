@@ -7,7 +7,7 @@ import os
 config = context.config
 fileConfig(config.config_file_name)
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:Akhil@localhost:5432/ecom")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:akhil@localhost:5432/new_ecoms")
 config.set_main_option("sqlalchemy.url", DATABASE_URL)
 
 target_metadata = Base.metadata

@@ -28,7 +28,14 @@ class Seller(Base):
     refresh_token = Column(String, nullable=True)
     refresh_token_expires_at = Column(DateTime, nullable=True)
 # Product model
+class Category(Base):
+    __tablename__ = "categories"
 
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, nullable=False)
+
+    # Relationship with products
+    products = relationship("Product", back_populates="category")
 class Product(Base):
     __tablename__ = "products"
 
@@ -39,9 +46,12 @@ class Product(Base):
     _image = Column("image", Text)  # JSON stored as text
     phone_number = Column(String)
     seller_id = Column(Integer, ForeignKey("sellers.id"))  # <-- fix here
+    category_id = Column(Integer, ForeignKey("categories.id"))  # <-- new field
 
     seller = relationship("Seller", back_populates="products")
     orders = relationship("Order", back_populates="product")
+    category = relationship("Category", back_populates="products")  # <-- relationship
+
 
 
     @hybrid_property
@@ -63,7 +73,12 @@ class Otp(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+class Banner(Base):
+    __tablename__ = "banners"
 
+    id = Column(Integer, primary_key=True, index=True)
+    image_url = Column(String, nullable=False)  # Store image URL or path
+    redirect_url = Column(String, nullable=True)  # Optional URL when banner clicked
 # Order model
 class Order(Base):
     __tablename__ = "orders"

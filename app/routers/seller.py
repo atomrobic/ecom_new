@@ -150,6 +150,8 @@ def manage_product(
     price: Optional[float] = Form(None),
     phone_number: Optional[str] = Form(None),
     images: Optional[List[UploadFile]] = File(None),
+    category_id: Optional[int] = Form(None),  # <-- category added
+
     db: Session = Depends(get_db),
     current_seller: models.Seller = Depends(auths.get_current_seller)
 ):
@@ -185,7 +187,9 @@ def manage_product(
             price=price,
             image=image_urls,
             phone_number=phone_number,
-            seller_id=seller_id
+            seller_id=seller_id,
+            category_id=category_id  # <-- assign category
+
         )
         db_product = crud.create_product(db, product_data)
         return crud.product_to_schema(db_product)
@@ -210,6 +214,8 @@ def manage_product(
             update_data["price"] = price
         if phone_number:
             update_data["phone_number"] = phone_number
+        if category_id: update_data["category_id"] = category_id  # <-- update category
+
 
         if images:
             if len(images) > UPLOAD_LIMIT:
@@ -393,23 +399,111 @@ async def read_products_by_seller(seller_id: int, db: Session = Depends(get_db))
         raise HTTPException(status_code=404, detail="No products found for this seller")
     return products
 
+# Create a new category
+@router.post("/categories", response_model=schemas.Category)
+def create_category(
+    name: str = Form(...),
+    db: Session = Depends(get_db),
+    current_seller: models.Seller = Depends(auths.get_current_seller)
+):
+    existing = db.query(models.Category).filter_by(name=name).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Category already exists")
+
+    new_category = models.Category(name=name)
+    db.add(new_category)
+    db.commit()
+    db.refresh(new_category)
+    return new_category
+
+# List all categories (for dropdown)
+@router.get("/categories", response_model=List[schemas.Category])
+def list_categories(db: Session = Depends(get_db)):
+    return db.query(models.Category).all()
+
+
+# @router.get("/products", response_model=List[schemas.Product])
+# def list_products(
+#     seller_id: Optional[int] = Query(None),  # renamed for clarity
+#     db: Session = Depends(get_db)
+# ):
+#     query = db.query(models.Product)
+    
+#     if seller_id is not None:
+#         query = query.filter(models.Product.seller_id == seller_id)
+    
+#     db_products = query.all()
+    
+#     # Convert to schema including category
+#     return [crud.product_to_schema(p) for p in db_products]
+
+# @router.get("/products/{product_id}", response_model=schemas.Product)
+# def product_details(product_id: int, db: Session = Depends(get_db)):
+#     db_product = db.query(models.Product).filter(models.Product.id == product_id).first()
+#     if not db_product:
+#         raise HTTPException(status_code=404, detail="Product not found")
+#     return crud.product_to_schema(db_product)
+
+@router.get("/categories", response_model=List[schemas.Category])
+def list_categories(db: Session = Depends(get_db)):
+    return db.query(models.Category).all()
+
+
+# @router.get("/products", response_model=List[schemas.Product])
+# def list_products(
+#     seller_id: Optional[int] = Query(None),
+#     category_id: Optional[int] = Query(None),
+#     sort_by: Optional[str] = Query("featured"),
+
+#     db: Session = Depends(get_db)
+# ):
+#     query = db.query(models.Product)
+    
+#     if seller_id is not None:
+#         query = query.filter(models.Product.seller_id == seller_id)
+
+#     if category_id is not None:
+#         query = query.filter(models.Product.category_id == category_id)
+    
+#     db_products = query.all()
+#        # Sorting
+#     if sort_by == "price-low":
+#         query = query.order_by(models.Product.price.asc())
+#     elif sort_by == "price-high":
+#         query = query.order_by(models.Product.price.desc())
+#     elif sort_by == "rating":
+#         query = query.order_by(models.Product.rating.desc())
+#     return [crud.product_to_schema(p) for p in db_products]
+
 @router.get("/products", response_model=List[schemas.Product])
 def list_products(
-    id: Optional[int] = Query(None),
+    seller_id: Optional[int] = Query(None),
+    category_id: Optional[int] = Query(None),
+    sort_by: Optional[str] = Query("featured"),
+    limit: int = Query(10, ge=1),   # ✅ Default limit 10, must be >=1
+    offset: int = Query(0, ge=0),   # ✅ Default offset 0
     db: Session = Depends(get_db)
 ):
-    if id is not None:
-        db_products = db.query(models.Product).filter(models.Product.seller_id == id).all()
-        return [crud.product_to_schema(p) for p in db_products]
+    query = db.query(models.Product)
+    
+    if seller_id is not None:
+        query = query.filter(models.Product.seller_id == seller_id)
 
-    db_products = db.query(models.Product).all()
+    if category_id is not None:
+        query = query.filter(models.Product.category_id == category_id)
+    
+    # ✅ Sorting
+    if sort_by == "price-low":
+        query = query.order_by(models.Product.price.asc())
+    elif sort_by == "price-high":
+        query = query.order_by(models.Product.price.desc())
+    # else: featured or default -> leave unsorted / custom logic
+    
+    # ✅ Apply limit & offset for pagination
+    db_products = query.offset(offset).limit(limit).all()
+    
     return [crud.product_to_schema(p) for p in db_products]
-@router.get("/products/{product_id}", response_model=schemas.Product)
-def product_details(product_id: int, db: Session = Depends(get_db)):
-    db_product = db.query(models.Product).filter(models.Product.id == product_id).first()
-    if not db_product:
-        raise HTTPException(status_code=404, detail="Product not found")
-    return crud.product_to_schema(db_product)
+
 # ---------------------- OTP UTILS ----------------------
 otp_store = {}
 

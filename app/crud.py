@@ -35,7 +35,9 @@ def product_to_schema(db_product: models.Product) -> schemas.Product:
         price=db_product.price,
         image=json.loads(db_product.image),
         phone_number=db_product.phone_number,
-        seller_id=db_product.seller_id  # ✅ Add this
+        seller_id=db_product.seller_id,  # ✅ Add this
+        category=db_product.category.name if db_product.category else None  # category included
+
     )
 
 def update_product(db: Session, product_id: int, update_data: dict):
@@ -59,7 +61,9 @@ def create_product(db: Session, product: schemas.ProductCreate):
         price=product.price,
         image=json.dumps(product.image) if product.image else "[]",  # ✅ store as string
         phone_number=product.phone_number,
-        seller_id=product.seller_id
+        seller_id=product.seller_id,
+        category_id=product.category_id  # ✅ Add this
+
     )
     db.add(db_product)
     db.commit()
@@ -78,7 +82,9 @@ product_to_schema = lambda p: schemas.Product(
     price=p.price,
     image=json.loads(p.image) if isinstance(p.image, str) else (p.image if isinstance(p.image, list) else []),
     phone_number=p.phone_number,
-    seller_id=p.seller_id
+    seller_id=p.seller_id,
+    category_id=p.category_id   # ✅ Add this
+
 )
 
 
@@ -140,3 +146,32 @@ def create_user(db: Session, user: UserCreate):
 
 ######seller######
 
+
+def create_banner(db: Session, banner: schemas.BannerCreate):
+    db_banner = models.Banner(**banner.dict())
+    db.add(db_banner)
+    db.commit()
+    db.refresh(db_banner)
+    return db_banner
+
+def get_banners(db: Session, skip: int = 0, limit: int = 10):
+    return db.query(models.Banner).offset(skip).limit(limit).all()
+
+def get_banner(db: Session, banner_id: int):
+    return db.query(models.Banner).filter(models.Banner.id == banner_id).first()
+
+def update_banner(db: Session, banner_id: int, banner: schemas.BannerUpdate):
+    db_banner = get_banner(db, banner_id)
+    if db_banner:
+        for key, value in banner.dict(exclude_unset=True).items():
+            setattr(db_banner, key, value)
+        db.commit()
+        db.refresh(db_banner)
+    return db_banner
+
+def delete_banner(db: Session, banner_id: int):
+    db_banner = get_banner(db, banner_id)
+    if db_banner:
+        db.delete(db_banner)
+        db.commit()
+    return db_banner

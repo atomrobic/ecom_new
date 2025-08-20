@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 
 # User models
 class UserBase(BaseModel):
@@ -41,6 +41,8 @@ class ProductBase(BaseModel):
     image: List[str]  # Pydantic expects a list of strings here
     phone_number: str
     seller_id: int  # seller reference
+    category_id: int  # <- requires category, not category_id
+
 
 class ProductCreate(ProductBase):
     pass
@@ -79,3 +81,28 @@ class OTPVerifySchema(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+    
+    
+class CategoryBase(BaseModel):
+    name: str
+
+class CategoryCreate(CategoryBase):
+    pass
+
+class Category(CategoryBase):
+    id: int
+
+
+class BannerBase(BaseModel):
+    image_url: str
+    redirect_url: Optional[str] = None
+
+class BannerCreate(BannerBase):
+    pass
+
+class BannerUpdate(BaseModel):
+    image_url: Optional[str] = None
+    redirect_url: Optional[str] = None
+
+class Banner(BannerBase):
+    id: int
