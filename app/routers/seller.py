@@ -475,11 +475,14 @@ def list_categories(db: Session = Depends(get_db)):
 #         query = query.order_by(models.Product.rating.desc())
 #     return [crud.product_to_schema(p) for p in db_products]
 
+
 @router.get("/products", response_model=List[schemas.Product])
 def list_products(
     seller_id: Optional[int] = Query(None),
     category_id: Optional[int] = Query(None),
-    sort_by: Optional[str] = Query(None),  # ✅ No default
+    sort_by: Optional[str] = Query(None),
+    min_price: Optional[float] = Query(None),
+    max_price: Optional[float] = Query(None),
     limit: int = Query(10, ge=1),
     offset: int = Query(0, ge=0),
     db: Session = Depends(get_db)
@@ -491,8 +494,12 @@ def list_products(
 
     if category_id is not None:
         query = query.filter(models.Product.category_id == category_id)
-    
-    # ✅ Apply sorting only if provided
+
+    if min_price is not None:
+        query = query.filter(models.Product.price >= min_price)
+    if max_price is not None:
+        query = query.filter(models.Product.price <= max_price)
+
     if sort_by == "price-low":
         query = query.order_by(models.Product.price.asc())
     elif sort_by == "price-high":
@@ -501,7 +508,6 @@ def list_products(
         query = query.order_by(models.Product.created_at.desc())
     elif sort_by == "rating":
         query = query.order_by(models.Product.rating.desc())
-    # If sort_by is None or unrecognized, leave unsorted
     
     db_products = query.offset(offset).limit(limit).all()
     
