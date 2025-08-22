@@ -437,12 +437,12 @@ def list_categories(db: Session = Depends(get_db)):
 #     # Convert to schema including category
 #     return [crud.product_to_schema(p) for p in db_products]
 
-# @router.get("/products/{product_id}", response_model=schemas.Product)
-# def product_details(product_id: int, db: Session = Depends(get_db)):
-#     db_product = db.query(models.Product).filter(models.Product.id == product_id).first()
-#     if not db_product:
-#         raise HTTPException(status_code=404, detail="Product not found")
-#     return crud.product_to_schema(db_product)
+@router.get("/products/{product_id}", response_model=schemas.Product)
+def product_details(product_id: int, db: Session = Depends(get_db)):
+    db_product = db.query(models.Product).filter(models.Product.id == product_id).first()
+    if not db_product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return crud.product_to_schema(db_product)
 
 @router.get("/categories", response_model=List[schemas.Category])
 def list_categories(db: Session = Depends(get_db)):
