@@ -21,8 +21,8 @@ app = FastAPI()
 # Serve static uploads
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 origins = [
-    "http://localhost",
-    "http://localhost:3000",
+    # "http://localhost",
+    # "http://localhost:3000",
     "https://ekart-azure-kappa.vercel.app",   # ✅ Production frontend
 ]
 
