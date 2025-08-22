@@ -23,7 +23,7 @@ app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 origins = [
     "http://localhost",
     "http://localhost:3000",
-    "https://rect-eshop.vercel.app",   # ✅ Production frontend
+    "https://ekart-azure-kappa.vercel.app",   # ✅ Production frontend
 ]
 
 
