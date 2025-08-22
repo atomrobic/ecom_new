@@ -23,7 +23,7 @@ app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 origins = [
     "https://ekart-azure-kappa.vercel.app",  # your deployed frontend
-    "http://localhost:8000",                  # local frontend
+    "http://localhost:3001",                  # local frontend
 ]
 
 app.add_middleware(
