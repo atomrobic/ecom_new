@@ -5,7 +5,6 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 
-from app import models
 from app.database import engine, Base, get_db
 from app.routers import auth, banner, order, seller
 from app.config import UPLOAD_DIR
