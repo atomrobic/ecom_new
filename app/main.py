@@ -23,8 +23,9 @@ app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 origins = [
     "http://localhost",
     "http://localhost:3000",
-    # Add other trusted frontend URLs here (e.g., "https://your-production-frontend.com")
+    "https://rect-eshop.vercel.app",   # ✅ Production frontend
 ]
+
 
 app.add_middleware(
     CORSMiddleware,
