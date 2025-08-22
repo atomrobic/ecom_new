@@ -57,4 +57,4 @@ EXPOSE 8000
 
 # Run the FastAPI app with Gunicorn + Uvicorn
 # main:app → main.py file with FastAPI instance called "app"
-CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "app.main:app", "--bind", "0.0.0.0:8000"]
+CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "main:app", "--bind", "0.0.0.0:8000"]
