@@ -479,9 +479,9 @@ def list_categories(db: Session = Depends(get_db)):
 def list_products(
     seller_id: Optional[int] = Query(None),
     category_id: Optional[int] = Query(None),
-    sort_by: Optional[str] = Query("featured"),
-    limit: int = Query(10, ge=1),   # ✅ Default limit 10, must be >=1
-    offset: int = Query(0, ge=0),   # ✅ Default offset 0
+    sort_by: Optional[str] = Query(None),  # ✅ No default
+    limit: int = Query(10, ge=1),
+    offset: int = Query(0, ge=0),
     db: Session = Depends(get_db)
 ):
     query = db.query(models.Product)
@@ -492,14 +492,17 @@ def list_products(
     if category_id is not None:
         query = query.filter(models.Product.category_id == category_id)
     
-    # ✅ Sorting
+    # ✅ Apply sorting only if provided
     if sort_by == "price-low":
         query = query.order_by(models.Product.price.asc())
     elif sort_by == "price-high":
         query = query.order_by(models.Product.price.desc())
-    # else: featured or default -> leave unsorted / custom logic
+    elif sort_by == "newest":
+        query = query.order_by(models.Product.created_at.desc())
+    elif sort_by == "rating":
+        query = query.order_by(models.Product.rating.desc())
+    # If sort_by is None or unrecognized, leave unsorted
     
-    # ✅ Apply limit & offset for pagination
     db_products = query.offset(offset).limit(limit).all()
     
     return [crud.product_to_schema(p) for p in db_products]
