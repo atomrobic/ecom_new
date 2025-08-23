@@ -38,3 +38,25 @@ def delete_banner(banner_id: int, db: Session = Depends(database.get_db)):
     if not db_banner:
         raise HTTPException(status_code=404, detail="Banner not found")
     return {"message": "Banner deleted successfully"}
+# app/routers/banner.py
+from fastapi import APIRouter
+import json
+from app.redis_client import r
+
+router = APIRouter()
+
+# Dummy data
+banners = [
+    {"id": 1, "title": "Big Sale"},
+    {"id": 2, "title": "New Arrivals"},
+]
+
+@router.get("/banners")
+def get_banners():
+    cached = r.get("banners")
+    if cached:
+        return json.loads(cached)
+
+    # Simulate DB call → save to cache
+    r.set("banners", json.dumps(banners), ex=60)  # cache 60s
+    return banners
