@@ -21,8 +21,8 @@ engine = create_engine(
     DATABASE_URL,
     connect_args={"sslmode": "require"} if "supabase" in DATABASE_URL or "render" in DATABASE_URL else {},  
     pool_pre_ping=True,
-    pool_size=2,
-    max_overflow=1,
+    pool_size=5,
+    max_overflow=10,
     pool_timeout=30,
     pool_recycle=1800
 )
